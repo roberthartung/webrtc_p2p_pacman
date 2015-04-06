@@ -127,10 +127,42 @@ void createGridPattern() {
   grid = ctx.createPattern(canvas_grid, "repeat");
 }
 
+class Edge {
+  Point p1;
+
+  Point p2;
+
+  Edge(x1, y1, x2, y2) {
+    p1 = new Point(x1,y1);
+    p2 = new Point(x2,y2);
+  }
+}
+
+/// The field/grid we will be playing on
+class Grid {
+  final CanvasElement canvas;
+
+  Map<Point,List<Edge>> sectors = new Map();
+
+  Grid(this.canvas);
+
+  void generate(List<Edge> edges) {
+    edges.forEach((Edge edge) {
+      sectors.putIfAbsent(edge.p1, () => new List()).add(edge);
+      sectors.putIfAbsent(edge.p2, () => new List()).add(edge);
+    });
+
+
+  }
+}
+
 void main() {
+  Grid grid = new Grid(querySelector('#canvas-grid'));
+  grid.generate([new Edge(5,10,5,15)]);
+
   canvas = querySelector('#canvas');
   ctx = canvas.getContext('2d');
-  createGridPattern();
+  //createGridPattern();
   window.animationFrame.then(render);
 
   document.onKeyDown.listen((KeyboardEvent ev) {
@@ -159,6 +191,7 @@ void render(num time) {
   int frame = time ~/ (1000 / 60);
   ctx.clearRect(0, 0, canvas.width,  canvas.height);
   ctx.save();
+  /*
   ctx.translate(10, 10);
 
   ctx.strokeStyle = 'blue';
@@ -176,6 +209,7 @@ void render(num time) {
     ctx.lineTo(canvas.width-innerSize, y);
     ctx.stroke();
   }
+  */
   /*
   ctx.save();
   ctx.translate(0,0);

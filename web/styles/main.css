@@ -12,13 +12,17 @@ body {
   background-color: #222;
 }
 
-#canvas {
-  position: absolute;
+#game {
+  position: relative;
   margin-left: -400px;
   margin-top: -400px;
-  top: 50%;
-  left: 50%;
   width: 800px;
   height: 800px;
+  top: 50%;
+  left: 50%;
   background-color: #000;
+}
+
+#game canvas {
+  position: absolute;
 }
