@@ -1,123 +1,18 @@
 import 'dart:html';
 import 'dart:math';
+import 'dart:async';
 //import 'package:webrtc_utils/game.dart';
-
-enum Direction {UP, RIGHT, DOWN, LEFT}
-
-const int innerSize = 20;
-
-abstract class MovingCharacter {
-  Point position;
-
-  Direction direction;
-
-  MovingCharacter(int x, int y, this.direction) {
-    position = new Point(x,y);
-  }
-
-  void _move() {
-    switch(direction) {
-      case Direction.UP :
-        position += new Point(0, -1);
-        break;
-      case Direction.RIGHT :
-        position += new Point(1, 0);
-        break;
-      case Direction.DOWN :
-        position += new Point(0, 1);
-        break;
-      case Direction.LEFT :
-        position += new Point(-1, 0);
-        break;
-    }
-  }
-}
-
-class Ghost extends MovingCharacter {
-  Ghost(x, y, direction) : super(x,y,direction) {
-
-  }
-
-  void render(int frame) {
-    _move();
-    // Body
-
-    ctx.beginPath();
-    ctx.translate(position.x, position.y);
-    ctx.moveTo(-15, 0);
-    ctx.quadraticCurveTo(-15, -30, 0, -30);
-    ctx.quadraticCurveTo(15, -30, 15, 0);
-    ctx.closePath();
-    ctx.fillStyle = 'cyan';
-    ctx.fill();
-    /*
-    ctx.beginPath();
-    ctx.arc(0,0, 2, 0, 2*PI);
-    ctx.fillStyle = 'red';
-    ctx.fill();
-    */
-  }
-}
-
-class PacMan extends MovingCharacter {
-  int angle = 5;
-
-  int mouthDirection = 1;
-
-  static const int radius = 10;
-
-  PacMan() : super(110, 110, Direction.RIGHT);
-
-  void _setAngle() {
-    if(angle >= 40) {
-      mouthDirection = -1;
-    } else if(angle <= 5) {
-      mouthDirection = 1;
-    }
-    if(mouthDirection == 1) {
-      angle += 2;
-    } else {
-      angle -= 2;
-    }
-  }
-
-  void render(int frame) {
-    _move();
-    _setAngle();
-    _draw();
-  }
-
-  void _draw() {
-    int angleOffset;
-    switch(direction) {
-      case Direction.UP :
-        angleOffset = 270;
-        break;
-      case Direction.RIGHT :
-        angleOffset = 0;
-        break;
-      case Direction.DOWN :
-        angleOffset = 90;
-        break;
-      case Direction.LEFT :
-        angleOffset = 180;
-        break;
-    }
-    ctx.beginPath();
-    ctx.moveTo(position.x, position.y);
-    ctx.arc(position.x, position.y, radius, (angleOffset + angle) / 180 * PI, (angleOffset + (360-angle)) / 180 * PI);
-    ctx.closePath();
-    ctx.fillStyle = 'yellow';
-    ctx.fill();
-  }
-}
+import 'package:webrtc_p2p_pacman/pacman.dart';
 
 CanvasRenderingContext2D ctx;
 CanvasElement canvas;
-CanvasPattern grid;
-PacMan pacMan = new PacMan();
-List<Ghost> ghosts = [new Ghost(210, 210, Direction.DOWN), new Ghost(410, 410, Direction.UP)];
+CheckboxInputElement gameBuilderMode;
+// CanvasPattern grid;
+Grid grid;
+List<Ghost> ghosts = [];
+PacMan pacMan;
 
+/*
 void createGridPattern() {
   CanvasElement canvas_grid = new CanvasElement(width: 20, height: 20);
   CanvasRenderingContext2D _ctx = canvas_grid.getContext('2d');
@@ -126,41 +21,62 @@ void createGridPattern() {
   _ctx.stroke();
   grid = ctx.createPattern(canvas_grid, "repeat");
 }
-
-class Edge {
-  Point p1;
-
-  Point p2;
-
-  Edge(x1, y1, x2, y2) {
-    p1 = new Point(x1,y1);
-    p2 = new Point(x2,y2);
-  }
-}
-
-/// The field/grid we will be playing on
-class Grid {
-  final CanvasElement canvas;
-
-  Map<Point,List<Edge>> sectors = new Map();
-
-  Grid(this.canvas);
-
-  void generate(List<Edge> edges) {
-    edges.forEach((Edge edge) {
-      sectors.putIfAbsent(edge.p1, () => new List()).add(edge);
-      sectors.putIfAbsent(edge.p2, () => new List()).add(edge);
-    });
-
-
-  }
-}
-
+*/
 void main() {
-  Grid grid = new Grid(querySelector('#canvas-grid'));
-  grid.generate([new Edge(5,10,5,15)]);
-
+  gameBuilderMode = querySelector('#enable-game-builder-mode');
+  /*
+  gameBuilderMode.onChange.listen((Event ev) {
+    
+  });
+  */
   canvas = querySelector('#canvas');
+  grid = new Grid(querySelector('#canvas-grid'));
+  grid.add(new Edge(20,5,20,25));
+  grid.add(new Edge(10,15,30,15));
+  //grid.add(new Edge(5,10,5,15));
+  //grid.add(new Edge(5,10,20,10));
+  //grid.add(new Edge(20,10,20,20));
+  //grid.generate();
+  
+  pacMan = new PacMan(grid);
+  ghosts.addAll([new Ghost(grid, 210, 210, Direction.DOWN), new Ghost(grid, 410, 410, Direction.UP)]);
+  Point start;
+  Edge tmpEdge = null;
+  StreamSubscription sub;
+  canvas.onMouseDown.listen((MouseEvent ev) {
+    if(ev.which != 1) {
+      return;
+    }
+    start = ev.offset;
+    
+    sub = canvas.onMouseMove.listen((MouseEvent ev) {
+      if(tmpEdge != null) {
+        grid.edges.remove(tmpEdge);
+      }
+      tmpEdge = createEdgeFromMouse(start, ev);
+      if(tmpEdge != null) {
+        grid.edges.add(tmpEdge);
+        grid.generate();
+      }
+    });
+    
+    document.onMouseUp.first.then((MouseEvent ev) {
+      if(sub != null) {
+        sub.cancel();
+        sub = null;
+      }
+      if(tmpEdge != null) {
+        grid.edges.remove(tmpEdge);
+        tmpEdge = null;
+      }
+      Edge e = createEdgeFromMouse(start, ev);
+      if(e != null) {
+        grid.add(e);
+        grid.generate();
+      }
+    });
+  });
+  
   ctx = canvas.getContext('2d');
   //createGridPattern();
   window.animationFrame.then(render);
@@ -169,19 +85,19 @@ void main() {
     switch(ev.keyCode) {
       case KeyCode.LEFT :
         ev.preventDefault();
-        pacMan.direction = Direction.LEFT;
+        pacMan.requestedDirection = Direction.LEFT;
         break;
       case KeyCode.RIGHT :
         ev.preventDefault();
-        pacMan.direction = Direction.RIGHT;
+        pacMan.requestedDirection = Direction.RIGHT;
         break;
       case KeyCode.DOWN :
         ev.preventDefault();
-        pacMan.direction = Direction.DOWN;
+        pacMan.requestedDirection = Direction.DOWN;
         break;
       case KeyCode.UP :
         ev.preventDefault();
-        pacMan.direction = Direction.UP;
+        pacMan.requestedDirection = Direction.UP;
         break;
     }
   });
@@ -189,6 +105,11 @@ void main() {
 
 void render(num time) {
   int frame = time ~/ (1000 / 60);
+  
+  grid.ctx.clearRect(0, 0, grid.canvas.width, grid.canvas.height);
+  if(gameBuilderMode.checked) {
+    grid.generate();
+  }
   ctx.clearRect(0, 0, canvas.width,  canvas.height);
   ctx.save();
   /*
@@ -220,13 +141,12 @@ void render(num time) {
   */
   // PacMan
   ctx.save();
-  pacMan.render(frame);
+  pacMan.render(ctx, frame);
   ctx.restore();
-
   // Ghosts
   ghosts.forEach((Ghost ghost) {
     ctx.save();
-    ghost.render(frame);
+    ghost.render(ctx, frame);
     ctx.restore();
   });
   ctx.restore();
