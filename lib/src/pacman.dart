@@ -6,9 +6,9 @@ class PacMan extends MovingCharacter {
   int mouthDirection = 1;
 
   static const int radius = 10;
-  
+
   // TODO(rh): Make initial direction random
-  PacMan(Grid grid) : super(grid, 410, 310, Direction.RIGHT);
+  PacMan(Grid grid, Point start) : super(grid, start, Direction.RIGHT);
 
   void _setAngle() {
     if(angle >= 40) {
@@ -27,6 +27,10 @@ class PacMan extends MovingCharacter {
     _move();
     _setAngle();
     _draw(ctx);
+  }
+
+  void _checkDirection(directions) {
+
   }
 
   void _draw(CanvasRenderingContext2D ctx) {

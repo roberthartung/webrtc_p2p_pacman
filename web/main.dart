@@ -1,45 +1,191 @@
 import 'dart:html';
 import 'dart:math';
 import 'dart:async';
-//import 'package:webrtc_utils/game.dart';
 import 'package:webrtc_p2p_pacman/pacman.dart';
 
-CanvasRenderingContext2D ctx;
-CanvasElement canvas;
-CheckboxInputElement gameBuilderMode;
-// CanvasPattern grid;
-Grid grid;
-List<Ghost> ghosts = [];
-PacMan pacMan;
-
-/*
-void createGridPattern() {
-  CanvasElement canvas_grid = new CanvasElement(width: 20, height: 20);
-  CanvasRenderingContext2D _ctx = canvas_grid.getContext('2d');
-  _ctx.strokeStyle = 'blue';
-  _ctx.rect(0.5, 0.5, innerSize, innerSize);
-  _ctx.stroke();
-  grid = ctx.createPattern(canvas_grid, "repeat");
+abstract class Scene {
+  final DivElement element;
+  Scene(this.element);
+  void hide() {
+    element.style.display = 'none';
+  }
+  void show() {
+    element.style.display = 'block';
+  }
 }
-*/
+
+class SelectTypeScene extends Scene {
+  SelectTypeScene(DivElement element) : super(element) {
+    element.querySelector('#btn-singleplayer').onClick.listen((MouseEvent ev) {
+      ev.preventDefault();
+      hide();
+      singlePlayerGameScene.show();
+    });
+
+    element.querySelector('#btn-multiplayer').onClick.listen((MouseEvent ev) {
+      ev.preventDefault();
+      hide();
+      multiPlayerGameScene.show();
+    });
+  }
+
+  void show() {
+    super.show();
+  }
+
+  void hide() {
+    super.hide();
+  }
+}
+
+class SinglePlayerGameScene extends Scene {
+  SingleplayerPacmanGame _game;
+
+  SinglePlayerGameScene(DivElement element) : super(element) {
+
+  }
+
+  void show() {
+    super.show();
+    _game = new SingleplayerPacmanGame(querySelector('#canvas-static'), querySelector('#canvas-dynamic'));
+    _game.onFinished.listen(_onFinished);
+    _game.onEaten.listen(_onFinished);
+    _game.start();
+  }
+
+  void _onFinished(int score) {
+    querySelector('#info-restart').style.visibility = 'visible';
+    StreamSubscription restart;
+    Timer returnTimer = new Timer(new Duration(seconds: 5), () {
+      restart.cancel();
+      hide();
+      selectTypeScene.show();
+    });
+
+    restart = document.onKeyDown.listen((KeyboardEvent ev) {
+      if(ev.keyCode == KeyCode.R) {
+        returnTimer.cancel();
+        // Force new game
+        hide();
+        show();
+      }
+    });
+  }
+
+  void hide() {
+    super.hide();
+    _game.stop();
+    querySelector('#info-restart').style.visibility = 'hidden';
+    _game = null;
+  }
+}
+
+class MultiPlayerGameScene extends Scene {
+  MultiplayerPacmanGame _game;
+
+  MultiPlayerGameScene(DivElement element) : super(element) {
+
+  }
+
+  void show() {
+    super.show();
+    _game = new MultiplayerPacmanGame(querySelector('#canvas-static'), querySelector('#canvas-dynamic'));
+    _game.onFinished.listen(_onFinished);
+    _game.onEaten.listen(_onFinished);
+    _game.start();
+  }
+
+  void _onFinished(int score) {
+    querySelector('#info-restart').style.visibility = 'visible';
+    StreamSubscription restart;
+    Timer returnTimer = new Timer(new Duration(seconds: 5), () {
+      restart.cancel();
+      hide();
+      selectTypeScene.show();
+    });
+
+    restart = document.onKeyDown.listen((KeyboardEvent ev) {
+      if(ev.keyCode == KeyCode.R) {
+        returnTimer.cancel();
+        // Force new game
+        hide();
+        show();
+      }
+    });
+  }
+
+  void hide() {
+    super.hide();
+    _game.stop();
+    querySelector('#info-restart').style.visibility = 'hidden';
+    _game = null;
+  }
+}
+
+final SelectTypeScene selectTypeScene = new SelectTypeScene(querySelector('#scene-select-type'));
+final SinglePlayerGameScene singlePlayerGameScene = new SinglePlayerGameScene(querySelector('#scene-singleplayer-game'));
+final MultiPlayerGameScene multiPlayerGameScene = new MultiPlayerGameScene(querySelector('#scene-multiplayer-lobby'));
+
+bool playMusic = false;
+bool playSounds = true;
+num volume = 10;
+AudioElement music;
+
 void main() {
-  gameBuilderMode = querySelector('#enable-game-builder-mode');
+  selectTypeScene.show();
+  music = querySelector('#music');
+  music.volume = volume/100.0;
+  music.play();
+  music.muted = !playMusic;
+  querySelector('#btn-music').onClick.listen((MouseEvent ev) {
+    playMusic = !playMusic;
+    music.muted = !playMusic;
+    if(playMusic) {
+      querySelector('#btn-music').text = 'Disable music';
+    } else {
+      querySelector('#btn-music').text = 'Enable music';
+    }
+  });
+
+  querySelector('#btn-sounds').onClick.listen((MouseEvent ev) {
+    playSounds = !playSounds;
+
+    if(singlePlayerGameScene._game != null) {
+      singlePlayerGameScene._game.playSounds = playSounds;
+    }
+
+    if(playSounds) {
+      querySelector('#btn-sounds').text = 'Disable sounds';
+    } else {
+      querySelector('#btn-sounds').text = 'Enable sounds';
+    }
+  });
+
+  RangeInputElement volumneElement = querySelector('#volume');
+  volumneElement.onChange.listen((Event ev) {
+    volume = volumneElement.valueAsNumber;
+    music.volume = volume/100.0;
+  });
+
+  // CheckboxInputElement gameBuilderMode;
+  //gameBuilderMode = querySelector('#enable-game-builder-mode');
+
   /*
-  gameBuilderMode.onChange.listen((Event ev) {
-    
+  (querySelector('#btn-print-edges') as ButtonElement).onClick.listen((MouseEvent ev) {
+    grid.edges.forEach((Edge e) {
+      print('grid.add(new Edge(${e.p1.x}, ${e.p1.y}, ${e.p2.x}, ${e.p2.y}));');
+    });
   });
   */
-  canvas = querySelector('#canvas');
-  grid = new Grid(querySelector('#canvas-grid'));
-  grid.add(new Edge(20,5,20,25));
-  grid.add(new Edge(10,15,30,15));
-  //grid.add(new Edge(5,10,5,15));
-  //grid.add(new Edge(5,10,20,10));
-  //grid.add(new Edge(20,10,20,20));
-  //grid.generate();
-  
-  pacMan = new PacMan(grid);
-  ghosts.addAll([new Ghost(grid, 210, 210, Direction.DOWN), new Ghost(grid, 410, 410, Direction.UP)]);
+  /*
+  canvas.onMouseMove.listen((MouseEvent ev) {
+    Point sector = new Point((ev.offset.x/Grid.gridSize).floor(), (ev.offset.y/Grid.gridSize).floor());
+    if(grid.crossPoints.containsKey(sector)) {
+      print('$sector ${grid.crossPoints[sector]}');
+    }
+  });
+  */
+  /*
   Point start;
   Edge tmpEdge = null;
   StreamSubscription sub;
@@ -48,7 +194,7 @@ void main() {
       return;
     }
     start = ev.offset;
-    
+
     sub = canvas.onMouseMove.listen((MouseEvent ev) {
       if(tmpEdge != null) {
         grid.edges.remove(tmpEdge);
@@ -56,10 +202,9 @@ void main() {
       tmpEdge = createEdgeFromMouse(start, ev);
       if(tmpEdge != null) {
         grid.edges.add(tmpEdge);
-        grid.generate();
       }
     });
-    
+
     document.onMouseUp.first.then((MouseEvent ev) {
       if(sub != null) {
         sub.cancel();
@@ -72,83 +217,10 @@ void main() {
       Edge e = createEdgeFromMouse(start, ev);
       if(e != null) {
         grid.add(e);
-        grid.generate();
       }
     });
   });
-  
+
   ctx = canvas.getContext('2d');
-  //createGridPattern();
-  window.animationFrame.then(render);
-
-  document.onKeyDown.listen((KeyboardEvent ev) {
-    switch(ev.keyCode) {
-      case KeyCode.LEFT :
-        ev.preventDefault();
-        pacMan.requestedDirection = Direction.LEFT;
-        break;
-      case KeyCode.RIGHT :
-        ev.preventDefault();
-        pacMan.requestedDirection = Direction.RIGHT;
-        break;
-      case KeyCode.DOWN :
-        ev.preventDefault();
-        pacMan.requestedDirection = Direction.DOWN;
-        break;
-      case KeyCode.UP :
-        ev.preventDefault();
-        pacMan.requestedDirection = Direction.UP;
-        break;
-    }
-  });
-}
-
-void render(num time) {
-  int frame = time ~/ (1000 / 60);
-  
-  grid.ctx.clearRect(0, 0, grid.canvas.width, grid.canvas.height);
-  if(gameBuilderMode.checked) {
-    grid.generate();
-  }
-  ctx.clearRect(0, 0, canvas.width,  canvas.height);
-  ctx.save();
-  /*
-  ctx.translate(10, 10);
-
-  ctx.strokeStyle = 'blue';
-  // Grid
-  for(num x=0.5;x<=canvas.width-innerSize+.5;x+=innerSize) {
-    ctx.beginPath();
-    ctx.moveTo(x, 0);
-    ctx.lineTo(x, canvas.height-innerSize);
-    ctx.stroke();
-  }
-
-  for(num y=0.5;y<=canvas.height-innerSize+.5;y+=innerSize) {
-    ctx.beginPath();
-    ctx.moveTo(0, y);
-    ctx.lineTo(canvas.width-innerSize, y);
-    ctx.stroke();
-  }
   */
-  /*
-  ctx.save();
-  ctx.translate(0,0);
-  ctx.rect(0,0, canvas.width, canvas.height);
-  ctx.fillStyle = grid;
-  ctx.fill();
-  ctx.restore();
-  */
-  // PacMan
-  ctx.save();
-  pacMan.render(ctx, frame);
-  ctx.restore();
-  // Ghosts
-  ghosts.forEach((Ghost ghost) {
-    ctx.save();
-    ghost.render(ctx, frame);
-    ctx.restore();
-  });
-  ctx.restore();
-  window.animationFrame.then(render);
 }

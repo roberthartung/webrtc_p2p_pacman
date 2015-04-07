@@ -9,12 +9,12 @@ class Edge {
   bool get isHorizontal => _horizontal;
   num get height => p2.y - p1.y;
   num get width => p2.x - p1.x;
-  
+
   Edge(x1, y1, x2, y2) {
     if((x1 == x2 && y1 == y2) || (x1 != x2 && y1 != y2)) {
       throw "Edge has identical points or is not horizontal or vertical.";
     }
-    
+
     // Make sure p1 is always more left/top of p2
     if(y2 < y1 || x2 < x1) {
       p1 = new Point(x2,y2);
@@ -23,61 +23,53 @@ class Edge {
       p1 = new Point(x1,y1);
       p2 = new Point(x2,y2);
     }
-    
+
     if(x1 == x2) {
       _vertical = true;
     } else if(y1 == y2) {
       _horizontal = true;
     }
   }
+
+  String toString() => 'Edge:$p1->$p2';
 }
 
 /// The field/grid we will be playing on
 class Grid {
   final CanvasElement canvas;
-  
+
   CanvasRenderingContext2D _ctx;
-  
+
   CanvasRenderingContext2D get ctx => _ctx;
-  
+
   final List<Edge> edges = new List();
-  
+
   static const int gridSize = 20;
 
-  Map<Point,List<Edge>> sectors = new Map();
+  //Map<Point,List<Edge>> sectors = new Map();
 
   final Map<Point, List<Direction>> crossPoints = new Map();
-  
+
   Grid(this.canvas) {
     _ctx = canvas.getContext('2d');
   }
-  
+
+  /// Called to get
+
   void _getCrossPoints() {
-    // Get all start and end points from all edges
-    Set<Point> points = new Set();
-    points.addAll(edges.map((Edge edge) => edge.p1));
-    points.addAll(edges.map((Edge edge) => edge.p2));
+    // Idea: Loop through edges and add position to the points.
     crossPoints.clear();
-    // Loop through points and check in which direction the edges go
-    points.forEach((Point crossPoint) {
-      if(edges.any((Edge e) => e.p1.y == crossPoint.y && e.p1.x < crossPoint.x)) {
-        crossPoints.putIfAbsent(crossPoint, () => new List()).add(Direction.LEFT);
-      }
-      
-      if(edges.any((Edge e) => e.p2.y == crossPoint.y && e.p2.x > crossPoint.x)) {
-        crossPoints.putIfAbsent(crossPoint, () => new List()).add(Direction.RIGHT);
-      }
-      
-      if(edges.any((Edge e) => e.p1.x == crossPoint.x && e.p1.y < crossPoint.y)) {
-        crossPoints.putIfAbsent(crossPoint, () => new List()).add(Direction.UP);
-      }
-      
-      if(edges.any((Edge e) => e.p1.x == crossPoint.x && e.p2.y > crossPoint.y)) {
-        crossPoints.putIfAbsent(crossPoint, () => new List()).add(Direction.DOWN);
+    edges.forEach((Edge edge) {
+      if(edge.isHorizontal) {
+        crossPoints.putIfAbsent(edge.p1, () => new List()).add(Direction.RIGHT);
+        crossPoints.putIfAbsent(edge.p2, () => new List()).add(Direction.LEFT);
+      } else {
+        crossPoints.putIfAbsent(edge.p1, () => new List()).add(Direction.DOWN);
+        crossPoints.putIfAbsent(edge.p2, () => new List()).add(Direction.UP);
       }
     });
   }
-  
+
   void add(Edge e) {
     // Check if this edge intersects with any other edge, if so, create new subedge!
     List<Edge> edgesToRemove = [];
@@ -86,34 +78,36 @@ class Grid {
       Point intersectionPoint = null;
       if(e.isHorizontal) {
         // Use e.y
-        if(e.p1.y >= otherEdge.p1.y && e.p1.y <= otherEdge.p2.y &&
-            otherEdge.p1.x >= e.p1.x && otherEdge.p1.x <= e.p2.x) {
+        if(e.p1.y > otherEdge.p1.y && e.p1.y < otherEdge.p2.y &&
+            otherEdge.p1.x > e.p1.x && otherEdge.p1.x < e.p2.x) {
           intersectionPoint = new Point(otherEdge.p1.x, e.p1.y);
-          // print('ok1 $intersectionPoint');
         }
       } else {
         // Use e.x
-        if(e.p1.x >= otherEdge.p1.x && e.p1.x <= otherEdge.p2.x &&
-              otherEdge.p1.y >= e.p1.y && otherEdge.p1.y <= e.p2.y) {
+        if(e.p1.x > otherEdge.p1.x && e.p1.x < otherEdge.p2.x &&
+              otherEdge.p1.y > e.p1.y && otherEdge.p1.y < e.p2.y) {
           intersectionPoint = new Point(e.p1.x, otherEdge.p1.y);
-          // print('ok2 $intersectionPoint');
         }
       }
-      
-      // TODO(rh): Check if otherEdge.p1 == e.p1 etc to see if they connect.
+
       // Merge lines if the connect.
       if(intersectionPoint != null) {
+        Edge edge;
         try {
-          edgesToAdd.add(new Edge(otherEdge.p1.x, otherEdge.p1.y, intersectionPoint.x, intersectionPoint.y));
+          edge = new Edge(otherEdge.p1.x, otherEdge.p1.y, intersectionPoint.x, intersectionPoint.y);
+          edgesToAdd.add(edge);
         } catch(e) { }
         try {
-          edgesToAdd.add(new Edge(intersectionPoint.x, intersectionPoint.y, otherEdge.p2.x, otherEdge.p2.y));
+          edge = new Edge(intersectionPoint.x, intersectionPoint.y, otherEdge.p2.x, otherEdge.p2.y);
+          edgesToAdd.add(edge);
         } catch(e) { }
         try {
-          edgesToAdd.add(new Edge(e.p1.x, e.p1.y, intersectionPoint.x, intersectionPoint.y));
+          edge = new Edge(e.p1.x, e.p1.y, intersectionPoint.x, intersectionPoint.y);
+          edgesToAdd.add(edge);
         } catch(e) { }
         try {
-          edgesToAdd.add(new Edge(intersectionPoint.x, intersectionPoint.y, e.p2.x, e.p2.y));
+          edge = new Edge(intersectionPoint.x, intersectionPoint.y, e.p2.x, e.p2.y);
+          edgesToAdd.add(edge);
         } catch(e) { }
         edgesToRemove.add(otherEdge);
       }
@@ -122,20 +116,16 @@ class Grid {
     // edges
     if(edgesToRemove.isEmpty) {
       edgesToAdd.add(e);
-      edges.add(e);
+    } else {
+      edges.removeWhere((Edge e) => edgesToRemove.contains(e));
     }
-    edges.removeWhere((Edge e) => edgesToRemove.contains(e));
     edges.addAll(edgesToAdd);
-    edgesToAdd.forEach((Edge e) {
-      sectors.putIfAbsent(e.p1, () => new List()).add(e);
-      sectors.putIfAbsent(e.p2, () => new List()).add(e);
-    });
-    
     _getCrossPoints();
   }
-  
+
   void _mesh() {
-    _ctx.strokeStyle = 'gray';
+    _ctx.strokeStyle = '#666';
+    _ctx.lineWidth = 1;
     // Grid
     for(num x=0.5;x<=canvas.width+.5;x+=gridSize) {
       _ctx.beginPath();
@@ -152,18 +142,21 @@ class Grid {
     }
   }
 
-  void generate() {
+  void generate(bool mesh) {
     _ctx.clearRect(0, 0, canvas.width, canvas.height);
-    _mesh();
-    _ctx.strokeStyle = 'blue';
-    _ctx.fillStyle = 'red';
+    if(mesh) {
+      _mesh();
+    }
+    _ctx.strokeStyle = '#00F';
+    //_ctx.fillStyle = 'red';
+    _ctx.lineWidth = 3;
     // Draw two lines
     edges.forEach((Edge e) {
       // Draw lines only in case there is more than one sector between start and end
       if((e.isHorizontal && (e.p2.x - e.p1.x > 0)) ||
           (e.isVertical && (e.p2.y - e.p1.y > 0))) {
-        _ctx.fillRect(gridSize*e.p1.x+gridSize/2, gridSize*e.p1.y+gridSize/2, 2,2);
-        _ctx.fillRect(gridSize*e.p2.x+gridSize/2, gridSize*e.p2.y+gridSize/2, 2,2);
+        //_ctx.fillRect(gridSize*e.p1.x+gridSize/2, gridSize*e.p1.y+gridSize/2, 2,2);
+        //_ctx.fillRect(gridSize*e.p2.x+gridSize/2, gridSize*e.p2.y+gridSize/2, 2,2);
         if(e.isHorizontal) {
           // Top
           _ctx.beginPath();
@@ -189,6 +182,38 @@ class Grid {
         }
       }
     });
+
+    crossPoints.forEach((Point point, List<Direction> directions) {
+      // Draw Lines
+      if(!directions.contains(Direction.DOWN)) {
+        _ctx.beginPath();
+        _ctx.moveTo((point.x) * gridSize, (point.y + 1) * gridSize);
+        _ctx.lineTo((point.x + 1) * gridSize, (point.y + 1) * gridSize);
+        _ctx.stroke();
+      }
+      if(!directions.contains(Direction.UP)) {
+        _ctx.beginPath();
+        _ctx.moveTo((point.x) * gridSize, (point.y) * gridSize);
+        _ctx.lineTo((point.x + 1) * gridSize, (point.y) * gridSize);
+        _ctx.stroke();
+      }
+      if(!directions.contains(Direction.LEFT)) {
+        _ctx.beginPath();
+        _ctx.moveTo((point.x) * gridSize, (point.y) * gridSize);
+        _ctx.lineTo((point.x) * gridSize, (point.y+1) * gridSize);
+        _ctx.stroke();
+      }
+      if(!directions.contains(Direction.RIGHT)) {
+        _ctx.beginPath();
+        _ctx.moveTo((point.x+1) * gridSize, (point.y) * gridSize);
+        _ctx.lineTo((point.x+1) * gridSize, (point.y+1) * gridSize);
+        _ctx.stroke();
+      }
+    });
+  }
+
+  void render(num time) {
+    generate(false);
   }
 }
 
