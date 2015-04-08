@@ -20,7 +20,7 @@
         <div id="menu-select" class="menu pacman">
           <a class="btn" id="btn-singleplayer">singleplayer</a><br/>
           000<br/>
-          <a class="btn" id="btn-multiplayer">multiplayer</a><br/>
+          <a class="btn disabled" id="btn-multiplayer">multiplayer</a><br/>
           000<br/>
           <a class="btn" id="btn-credits">credits</a><br/>
           000<br/>
@@ -28,11 +28,26 @@
         </div>
       </div>
 
-      <div class="scene" id="scene-multiplayer-lobby">
+      <!-- #1: Join Room -->
+      <div class="scene" id="scene-multiplayer-joinroom">
         <div id="menu-singleplayer" class="menu pacman">
-          <input type="text" id="room" placeholder="Enter room name here"><br/>
-          <a class="btn" id="btn-start">join room</a>
+          <input type="text" id="playername" placeholder="player name"><br/>
+          <input type="text" id="room" placeholder="room name"><br/>
+          <a class="btn" id="btn-join-room">join room</a>
         </div>
+      </div>
+
+      <!-- #2: Lobby, Start -->
+      <div class="scene" id="scene-multiplayer-lobby">
+        <ul id="lobby-players"></ul>
+        <div class="menu pacman">
+          <a class="btn" id="btn-start">start</a>
+        </div>
+      </div>
+
+      <!-- #3: Game -->
+      <div class="scene" id="scene-multiplayer-game">
+        STARTING SOON...
       </div>
 
       <div class="scene" id="scene-singleplayer-game">

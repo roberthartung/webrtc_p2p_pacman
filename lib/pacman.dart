@@ -3,6 +3,10 @@ library pacman;
 import 'dart:html';
 import 'dart:math';
 import 'dart:async';
+import 'dart:convert';
+
+import 'package:webrtc_utils/client.dart';
+import 'package:webrtc_utils/game.dart';
 
 part 'src/character.dart';
 part 'src/ghost.dart';

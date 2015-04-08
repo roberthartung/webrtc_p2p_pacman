@@ -166,7 +166,7 @@ abstract class PacmanGame {
       collectables.add(new Dot(new Point(p.x*Grid.gridSize + Grid.gridSize / 2, p.y*Grid.gridSize + Grid.gridSize / 2)));
     });
 
-    // ...
+    // TODO(rh): Move this to somewhere else? What can we do for multiplayer games?
     _keyboardSub = document.onKeyDown.listen((KeyboardEvent ev) {
       switch(ev.keyCode) {
         case KeyCode.LEFT :
