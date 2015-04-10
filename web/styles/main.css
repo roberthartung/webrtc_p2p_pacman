@@ -72,6 +72,12 @@ input {
 
 a.btn {
   cursor: pointer;
+  text-decoration: none;
+  color: yellow;
+}
+
+a.btn:focus {
+  border: 1px solid #fff;
 }
 
 a.btn.disabled {

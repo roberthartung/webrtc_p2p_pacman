@@ -9,36 +9,44 @@ abstract class PacmanGame {
   CanvasRenderingContext2D ctx_dynamic;
 
   Stream<int> get onFinished => _onFinishedStreamController.stream;
-  StreamController<int> _onFinishedStreamController = new StreamController.broadcast();
+  StreamController<int> _onFinishedStreamController =
+      new StreamController.broadcast();
 
   Stream<int> get onEaten => _onEatenStreamController.stream;
-  StreamController<int> _onEatenStreamController = new StreamController.broadcast();
+  StreamController<int> _onEatenStreamController =
+      new StreamController.broadcast();
 
   final Grid grid;
-  final List<Ghost> ghosts = [];
   List<Point> _startPoints;
-  // TODO(rh): Hack, only 1 pacman allowed at this time
-  PacMan get pacMan;
   int _ghostStartPointOffset = 1;
 
   final Set<Point> sectors = new Set();
 
   final List<Collectable> collectables = new List();
 
-  StreamSubscription _keyboardSub;
-
-  int _score = 0;
+  final int seed;
 
   bool playSounds = true;
 
-  PacmanGame(canvas_static, this.canvas_dynamic)
-    : grid = new Grid(canvas_static),
-      this.canvas_static = canvas_static {
+  double _startTime;
+
+  int _lastTick = 0;
+
+  List<MovingCharacter> characters = [];
+
+  List<Ghost> get ghosts => characters.where((c) => c is Ghost);
+
+  /// List of [Pacman] objects that are alive
+  List<Pacman> get pacmans => characters.where((c) => c is Pacman && c.alive);
+
+  PacmanGame(canvas_static, this.canvas_dynamic, [this.seed = null])
+      : grid = new Grid(canvas_static),
+        this.canvas_static = canvas_static {
     ctx_static = canvas_static.getContext('2d');
     ctx_dynamic = canvas_dynamic.getContext('2d');
     _loadLevel();
     _startPoints = grid.crossPoints.keys.toList();
-    _startPoints.shuffle();
+    _startPoints.shuffle(new Random(seed));
   }
 
   void _loadLevel() {
@@ -127,143 +135,155 @@ abstract class PacmanGame {
     grid.add(new Edge(15, 25, 18, 25));
   }
 
-  void createGhost() {
-    Point start = _startPoints.elementAt(_ghostStartPointOffset);
-    ghosts.add(new Ghost((_ghostStartPointOffset == 1 || _ghostStartPointOffset == 2) ? GhostStrategy.FOLLOW : GhostStrategy.RANDOM, pacMan, grid, start, grid.crossPoints[start].first));
-    _ghostStartPointOffset++;
-  }
-
   void spawnCherry() {
     List points = sectors.toList();
-    points.shuffle();
-    collectables.add(new Cherry(new Point(Grid.gridSize / 2 + Grid.gridSize * points.first.x, Grid.gridSize / 2 + Grid.gridSize * points.first.y)));
+    points.shuffle(new Random(seed));
+    collectables.add(new Cherry(new Point(
+        Grid.gridSize / 2 + Grid.gridSize * points.first.x,
+        Grid.gridSize / 2 + Grid.gridSize * points.first.y)));
   }
 
-  void start() {
+  void init() {
+    characters.forEach((MovingCharacter c) => c.movementController.attach());
     sectors.clear();
     // Generate collectables
     grid.edges.forEach((Edge edge) {
       sectors.add(edge.p1);
       sectors.add(edge.p2);
-      if(edge.isHorizontal) {
+      if (edge.isHorizontal) {
         final int y = edge.p1.y;
         int x = edge.p1.x + 1;
-        while(x < edge.p2.x) {
-          sectors.add(new Point(x,y));
+        while (x < edge.p2.x) {
+          sectors.add(new Point(x, y));
           x++;
         }
       } else {
         final int x = edge.p1.x;
         int y = edge.p1.y + 1;
-        while(y < edge.p2.y) {
-          sectors.add(new Point(x,y));
+        while (y < edge.p2.y) {
+          sectors.add(new Point(x, y));
           y++;
         }
       }
     });
 
     sectors.forEach((Point p) {
-      collectables.add(new Dot(new Point(p.x*Grid.gridSize + Grid.gridSize / 2, p.y*Grid.gridSize + Grid.gridSize / 2)));
+      collectables.add(new Dot(new Point(
+          p.x * Grid.gridSize + Grid.gridSize / 2,
+          p.y * Grid.gridSize + Grid.gridSize / 2)));
     });
+  }
 
-    // TODO(rh): Move this to somewhere else? What can we do for multiplayer games?
-    _keyboardSub = document.onKeyDown.listen((KeyboardEvent ev) {
-      switch(ev.keyCode) {
-        case KeyCode.LEFT :
-          ev.preventDefault();
-          pacMan.requestedDirection = Direction.LEFT;
-          break;
-        case KeyCode.RIGHT :
-          ev.preventDefault();
-          pacMan.requestedDirection = Direction.RIGHT;
-          break;
-        case KeyCode.DOWN :
-          ev.preventDefault();
-          pacMan.requestedDirection = Direction.DOWN;
-          break;
-        case KeyCode.UP :
-          ev.preventDefault();
-          pacMan.requestedDirection = Direction.UP;
-          break;
-      }
-    });
-    window.animationFrame.then(renderStatic);
-    window.animationFrame.then(render);
+  void start() {
+    init();
+    _startTime = window.performance.now();
+    window.animationFrame.then(_renderStatic);
+    window.animationFrame.then(_render);
   }
 
   void stop() {
-    if(_keyboardSub != null) {
-      _keyboardSub.cancel();
-      _keyboardSub = null;
-    }
+    characters.forEach((MovingCharacter c) => c.movementController.detach());
     // TODO(rh): Anything else we have to consider to cleanup here?
   }
 
-  void renderStatic(num time) {
-    ctx_static.clearRect(0, 0, canvas_dynamic.width,  canvas_static.height);
-    grid.render(time);
+  void _renderStatic(num time) {
+    renderStatic();
   }
 
-  void render(num time) {
-    int frame = time ~/ (1000 / 60);
-    if(frame % 10 == 0) {
-      _score += 1;
+  void renderStatic() {
+    ctx_static.clearRect(0, 0, canvas_dynamic.width, canvas_static.height);
+    grid.render();
+  }
+
+  void addGhost(Ghost g) {
+    characters.add(g);
+  }
+
+  void addPacman(Pacman p) {
+    characters.add(p);
+  }
+
+  void _render(num time) {
+    int lastTick = (time - _startTime) ~/ (1000 / 60);
+    for (int t = _lastTick + 1; t <= lastTick; t++) {
+      tick(t);
     }
-    if(frame % 1000 == 0) {
-      spawnCherry();
-    }
-    ctx_dynamic.clearRect(0, 0, canvas_dynamic.width,  canvas_static.height);
-    bool eaten = false;
-    // grid.ctx.clearRect(0, 0, grid.canvas.width, grid.canvas.height);
-    // grid.generate(gameBuilderMode.checked);
-    ctx_dynamic.clearRect(0, 0, canvas_dynamic.width,  canvas_dynamic.height);
-    // PacMan
-    ctx_dynamic.save();
-    pacMan.render(ctx_dynamic, frame);
-    ctx_dynamic.restore();
-    // Ghosts
-    ghosts.forEach((Ghost ghost) {
-      ctx_dynamic.save();
-      ghost.render(ctx_dynamic, frame);
-      ctx_dynamic.restore();
-
-      // Check if this ghost is close to pacman
-      if(ghost.position.distanceTo(pacMan.position) <= 15) {
-        if(playSounds) {
-          document.body.appendHtml('<audio src="sounds/pacman_death.wav" autoplay preload="auto"></audio>');
-        }
-        eaten = true;
-        return;
-      }
-    });
-    // Render collectables
-
-    List<Collectable> collected = [];
-    collectables.forEach((Collectable collectable) {
-      if(collectable.sector.distanceTo(pacMan.position) <= 6) {
-        collected.add(collectable);
-        if(collectable is Dot) {
-          _score += 50;
-        } else if(collectable is Cherry) {
-          _score += 500;
-        }
+    _lastTick = lastTick;
+    render();
+    // Check if we were eaten by a ghost
+    if (!pacmans.isEmpty) {
+      // If there is at least one Dot to collect -> render loop
+      if (collectables.any((Collectable c) => c is Dot)) {
+        window.animationFrame.then(_render);
       } else {
-        collectable.render(ctx_dynamic);
-      }
-    });
-    collectables.removeWhere((c) => collected.contains(c));
-
-    querySelector('#score').text = '$_score';
-
-    if(!eaten) {
-      if(collectables.isEmpty) {
-        _onFinishedStreamController.add(_score);
-        print('FINISHED!');
-      } else {
-        window.animationFrame.then(render);
+        _onFinishedStreamController.add(null);
       }
     } else {
-      _onEatenStreamController.add(_score);
+      _onEatenStreamController.add(null);
     }
+  }
+
+  void render() {
+    // Clear canvas
+    ctx_dynamic.clearRect(0, 0, canvas_dynamic.width, canvas_dynamic.height);
+    // Render character
+    characters.forEach((MovingCharacter character) {
+      ctx_dynamic.save();
+      character.render(ctx_dynamic);
+      ctx_dynamic.restore();
+    });
+    collectables.forEach((Collectable c) => c.render(ctx_dynamic));
+  }
+
+  void tick(int tick) {
+    // bool eaten = false;
+
+    if (tick % 1000 == 0) {
+      spawnCherry();
+    }
+
+    // Make one tick for each character
+    characters.forEach((MovingCharacter character) {
+      if (character is Pacman) {
+        if (tick % 10 == 0) {
+          character.score -= 1;
+        }
+      }
+      character.tick(tick);
+    });
+
+    // Check for collisions
+    ghosts.forEach((Ghost ghost) {
+      pacmans.forEach((Pacman pacman) {
+        if (ghost.position.distanceTo(pacman.position) <= 15) {
+          pacman.alive = false;
+          // TODO(rh): Play sounds only locally!
+          if (playSounds) {
+            document.body.appendHtml(
+                '<audio src="sounds/pacman_death.wav" autoplay preload="auto"></audio>');
+          }
+        }
+      });
+    });
+
+    if (pacmans.isEmpty) {
+      return;
+    }
+
+    // Render collectables
+    List<Collectable> collected = [];
+    collectables.forEach((Collectable collectable) {
+      pacmans.forEach((Pacman pacman) {
+        if (collectable.sector.distanceTo(pacman.position) <= 6) {
+          collected.add(collectable);
+          if (collectable is Dot) {
+            pacman.score += 50;
+          } else if (collectable is Cherry) {
+            pacman.score += 500;
+          }
+        }
+      });
+    });
+    collectables.removeWhere((c) => collected.contains(c));
   }
 }

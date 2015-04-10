@@ -1,21 +1,34 @@
 part of pacman;
 
 class SingleplayerPacmanGame extends PacmanGame {
-  PacMan pacMan;
+  Pacman pacman;
 
   static const int numGhosts = 5; // 5
 
   SingleplayerPacmanGame(s, d) : super(s, d);
 
+  void createGhost() {
+    Point start = _startPoints.elementAt(_ghostStartPointOffset);
+    Ghost ghost = new Ghost(
+        (_ghostStartPointOffset == 1 || _ghostStartPointOffset == 2)
+            ? new FollowingGhostMovement(pacman)
+            : new RandomGhostMovement(), pacman, grid, start);
+    // grid.crossPoints[start].first
+    addGhost(ghost);
+    _ghostStartPointOffset++;
+  }
+
   void start() {
-    pacMan = new PacMan(grid, _startPoints.first);
+    pacman = new Pacman(new KeyboardMovementController(), grid, _startPoints.first);
+    addPacman(pacman);
     for(int i=1;i<=numGhosts;i++) {
       createGhost();
     }
     super.start();
   }
 
-  void render(num time) {
-    super.render(time);
+  void render() {
+    super.render();
+    querySelector('#score').text = '${pacman.score}';
   }
 }

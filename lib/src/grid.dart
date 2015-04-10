@@ -212,7 +212,7 @@ class Grid {
     });
   }
 
-  void render(num time) {
+  void render() {
     generate(false);
   }
 }

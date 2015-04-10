@@ -1,61 +1,92 @@
 part of pacman;
 
-enum GhostStrategy {RANDOM, FOLLOW}
+class RandomGhostMovement implements MovementController {
+  Direction get direction => _direction;
+  Direction _direction;
 
-class Ghost extends MovingCharacter {
-  PacMan pacMan;
-
-  final GhostStrategy strategy;
-
-  Ghost(this.strategy, this.pacMan, Grid grid, Point sector, direction) : super(grid, sector, direction);
-
-  void _checkDirection(List<Direction> directions) {
-    switch(strategy) {
-      case GhostStrategy.RANDOM :
-        directions.shuffle();
-        requestedDirection = directions.first;
-        break;
-      case GhostStrategy.FOLLOW :
-        num dX = pacMan.position.x - position.x;
-        num dY = pacMan.position.y - position.y;
-        if(dX < 0 && directions.contains(Direction.LEFT)) {
-          requestedDirection = Direction.LEFT;
-          // Pacman is left of us
-        } else if(dX > 0 && directions.contains(Direction.RIGHT)) {
-          requestedDirection = Direction.RIGHT;
-          // Pacman is right of us
-        } else if(dY < 0 && directions.contains(Direction.UP)) {
-          requestedDirection = Direction.UP;
-          // Pacman is above us
-        } else if(dY > 0 && directions.contains(Direction.DOWN)) {
-          requestedDirection = Direction.DOWN;
-          // Pacman is below us
-        } else {
-          if(dX == 0) {
-            requestedDirection = directions.contains(Direction.LEFT) ? Direction.LEFT : Direction.RIGHT;
-            // Move Left or Right
-          } else if(dY == 0) {
-            requestedDirection = directions.contains(Direction.UP) ? Direction.UP : Direction.DOWN;
-          } else {
-            directions.shuffle();
-            requestedDirection = directions.first;
-            // print('ERROR: Ghost unable to determine next direction ($dX, $dY)');
-          }
-        }
-        break;
+  void checkDirection(Point position, List<Direction> directions, bool canChange) {
+    if(canChange) {
+      directions.shuffle();
+      _direction = directions.first;
     }
   }
 
-  void render(CanvasRenderingContext2D ctx, int frame) {
-    // angle to pacman
-    num dX = pacMan.position.x - position.x;
-    num dY = pacMan.position.y - position.y;
-    num length = sqrt(dX*dX + dY*dY);
-    dX /= length;
-    dY /= length;
+  void attach() {
 
-    // Move character
-    _move();
+  }
+
+  void detach() {
+
+  }
+}
+
+class FollowingGhostMovement implements MovementController {
+  Direction get direction => _direction;
+  Direction _direction;
+
+  Pacman pacman;
+
+  FollowingGhostMovement(this.pacman);
+
+  void checkDirection(Point position, List<Direction> directions, bool canChange) {
+    num dX = pacman.position.x - position.x;
+    num dY = pacman.position.y - position.y;
+    if(dX < 0 && directions.contains(Direction.LEFT)) {
+      _direction = Direction.LEFT;
+      // Pacman is left of us
+    } else if(dX > 0 && directions.contains(Direction.RIGHT)) {
+      _direction = Direction.RIGHT;
+      // Pacman is right of us
+    } else if(dY < 0 && directions.contains(Direction.UP)) {
+      _direction = Direction.UP;
+      // Pacman is above us
+    } else if(dY > 0 && directions.contains(Direction.DOWN)) {
+      _direction = Direction.DOWN;
+      // Pacman is below us
+    } else {
+      if(dX == 0) {
+        _direction = directions.contains(Direction.LEFT) ? Direction.LEFT : Direction.RIGHT;
+        // Move Left or Right
+      } else if(dY == 0) {
+        _direction = directions.contains(Direction.UP) ? Direction.UP : Direction.DOWN;
+      } else {
+        directions.shuffle();
+        _direction = directions.first;
+        // print('ERROR: Ghost unable to determine next direction ($dX, $dY)');
+      }
+    }
+  }
+
+  void attach() {
+
+  }
+
+  void detach() {
+
+  }
+}
+
+class Ghost extends MovingCharacter {
+  Pacman pacman;
+
+  Ghost(movementController, Pacman pacman, Grid grid, Point sector) : super(grid, movementController, sector) {
+    this.pacman = pacman;
+  }
+
+  void render(CanvasRenderingContext2D ctx) {
+    // angle to pacman
+    num dX,dY;
+
+    if(pacman != null) {
+      dX = pacman.position.x - position.x;
+      dY = pacman.position.y - position.y;
+      num length = sqrt(dX*dX + dY*dY);
+      dX /= length;
+      dY /= length;
+    } else {
+      dX = 0;
+      dY = 0;
+    }
 
     // Body
     ctx.beginPath();

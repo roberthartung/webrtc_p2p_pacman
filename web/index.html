@@ -18,7 +18,7 @@
 
       <div class="scene" id="scene-select-type">
         <div id="menu-select" class="menu pacman">
-          <a class="btn" id="btn-singleplayer">singleplayer</a><br/>
+          <a href="#" class="btn" id="btn-singleplayer">singleplayer</a><br/>
           000<br/>
           <a class="btn disabled" id="btn-multiplayer">multiplayer</a><br/>
           000<br/>
@@ -39,7 +39,8 @@
 
       <!-- #2: Lobby, Start -->
       <div class="scene" id="scene-multiplayer-lobby">
-        <ul id="lobby-players"></ul>
+        <div><span id="playercount">0</span> Players</div>
+        <table id="lobby-players"></table>
         <div class="menu pacman">
           <a class="btn" id="btn-start">start</a>
         </div>
@@ -47,7 +48,10 @@
 
       <!-- #3: Game -->
       <div class="scene" id="scene-multiplayer-game">
-        STARTING SOON...
+        <div id="game">
+          <canvas class="canvas-static" width="800" height="600"></canvas>
+          <canvas class="canvas-dynamic" width="800" height="600"></canvas>
+        </div>
       </div>
 
       <div class="scene" id="scene-singleplayer-game">
