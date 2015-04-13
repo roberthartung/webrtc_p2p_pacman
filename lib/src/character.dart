@@ -13,7 +13,7 @@ abstract class MovingCharacter {
 
   /// Current direction
   /*Direction direction;*/
-
+  
   MovingCharacter(
       this.grid, this.movementController, Point start/*,this.direction*/) {
     // Make sure we have our own object!

@@ -34,10 +34,11 @@ abstract class PacmanGame {
 
   List<MovingCharacter> characters = [];
 
-  List<Ghost> get ghosts => characters.where((c) => c is Ghost);
+  Iterable<Ghost> get ghosts => characters.where((c) => c is Ghost);
 
   /// List of [Pacman] objects that are alive
-  List<Pacman> get pacmans => characters.where((c) => c is Pacman && c.alive);
+  Iterable<Pacman> get pacmans =>
+      characters.where((c) => c is Pacman && c.alive);
 
   PacmanGame(canvas_static, this.canvas_dynamic, [this.seed = null])
       : grid = new Grid(canvas_static),
@@ -167,11 +168,24 @@ abstract class PacmanGame {
       }
     });
 
-    sectors.forEach((Point p) {
+    // Create PowerUp to be able to eat ghosts
+    List<Point> s = sectors.toList(growable: false);
+    // TODO(rh): Dynamic random
+    s.shuffle(nextRandom());
+    s.take(10).forEach((Point p) {
+      collectables.add(new Powerup(new Point(
+          p.x * Grid.gridSize + Grid.gridSize / 2,
+          p.y * Grid.gridSize + Grid.gridSize / 2)));
+    });
+    sectors.skip(10).forEach((Point p) {
       collectables.add(new Dot(new Point(
           p.x * Grid.gridSize + Grid.gridSize / 2,
           p.y * Grid.gridSize + Grid.gridSize / 2)));
     });
+  }
+
+  Random nextRandom() {
+    return new Random(seed);
   }
 
   void start() {
@@ -211,12 +225,13 @@ abstract class PacmanGame {
     _lastTick = lastTick;
     render();
     // Check if we were eaten by a ghost
-    if (!pacmans.isEmpty) {
+    if (pacmans.isNotEmpty) {
       // If there is at least one Dot to collect -> render loop
       if (collectables.any((Collectable c) => c is Dot)) {
         window.animationFrame.then(_render);
       } else {
         _onFinishedStreamController.add(null);
+        stop();
       }
     } else {
       _onEatenStreamController.add(null);
@@ -234,6 +249,11 @@ abstract class PacmanGame {
     });
     collectables.forEach((Collectable c) => c.render(ctx_dynamic));
   }
+
+  Timer _harmlessGhostsTimer = null;
+
+  bool _harmless = false;
+  // bool get harmless => _harmless;
 
   void tick(int tick) {
     // bool eaten = false;
@@ -256,11 +276,19 @@ abstract class PacmanGame {
     ghosts.forEach((Ghost ghost) {
       pacmans.forEach((Pacman pacman) {
         if (ghost.position.distanceTo(pacman.position) <= 15) {
-          pacman.alive = false;
-          // TODO(rh): Play sounds only locally!
-          if (playSounds) {
-            document.body.appendHtml(
-                '<audio src="sounds/pacman_death.wav" autoplay preload="auto"></audio>');
+          if(!_harmless) {
+            pacman.alive = false;
+            // TODO(rh): Play sounds only locally!
+            if (playSounds) {
+              document.body.appendHtml(
+                  '<audio src="sounds/pacman_death.wav" autoplay preload="auto"></audio>');
+            }
+          } else {
+            // Start timer to spawn ghost
+            // ghost.position = ...;
+            new Timer(new Duration(seconds: 5), () {
+              print('Ghost was eaten. [$ghost]. Respawn!');
+            });
           }
         }
       });
@@ -280,6 +308,18 @@ abstract class PacmanGame {
             pacman.score += 50;
           } else if (collectable is Cherry) {
             pacman.score += 500;
+          } else if(collectable is Powerup) {
+            if(_harmlessGhostsTimer != null) {
+              _harmlessGhostsTimer.cancel();
+            }
+            print('[$this] Ghost are now harmless.');
+            _harmless = true;
+            ghosts.forEach((Ghost g) => g._harmless = true);
+            _harmlessGhostsTimer = new Timer(new Duration(seconds: 10), () {
+              _harmless = false;
+              ghosts.forEach((Ghost g) => g._harmless = false);
+              print('[$this] Ghost are not harmless anymore.');
+            });
           }
         }
       });

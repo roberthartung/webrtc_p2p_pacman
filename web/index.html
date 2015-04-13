@@ -4,18 +4,23 @@
       <meta charset="utf-8">
       <meta http-equiv="X-UA-Compatible" content="IE=edge">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <meta name="scaffolded-by" content="https://github.com/google/stagehand">
       <title>webrtc_p2p_pacman</title>
-
+      <script src="packages/web_components/dart_support.js"></script>
       <link rel="stylesheet" href="styles/main.css">
+
+      <link rel="import" href="packages/webrtc_p2p_pacman/pacman_game.html">
   </head>
 
   <body>
+    <pacman-game>
+      <scene id="main-menu">
+
+      </scene>
+    </pacman-game>
+
     <img src="cherry.png" id="cherry" style="display: none;">
 
     <div id="container">
-      <h1 id="headline"><span style="color: red">P</span><span style="color: orange">A</span><span style="color: yellow">C</span><span style="color: #0f0">M</span><span style="color: blue">A</span><span style="color: magenta">N</span></h1>
-
       <div class="scene" id="scene-select-type">
         <div id="menu-select" class="menu pacman">
           <a href="#" class="btn" id="btn-singleplayer">singleplayer</a><br/>
@@ -75,7 +80,8 @@
       </div>
     </div>
 
-    <script type="application/dart" src="main.dart"></script>
+    <script type="application/dart">export 'package:polymer/init.dart';</script>
+    <!--<script type="application/dart" src="main.dart"></script>-->
     <script data-pub-inline src="packages/browser/dart.js"></script>
   </body>
 </html>
