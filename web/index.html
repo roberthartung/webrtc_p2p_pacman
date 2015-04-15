@@ -5,20 +5,53 @@
       <meta http-equiv="X-UA-Compatible" content="IE=edge">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <title>webrtc_p2p_pacman</title>
-      <script src="packages/web_components/dart_support.js"></script>
       <link rel="stylesheet" href="styles/main.css">
-
-      <link rel="import" href="packages/webrtc_p2p_pacman/pacman_game.html">
+      <link rel="import" href="packages/webrtc_p2p_pacman/rh_game.html">
+      <link rel="import" href="packages/webrtc_p2p_pacman/rh_game_asset.html">
+      <link rel="import" href="packages/webrtc_p2p_pacman/scene.html">
+      <link rel="import" href="packages/webrtc_p2p_pacman/menu_item.html">
   </head>
 
-  <body>
-    <pacman-game>
-      <scene id="main-menu">
+  <body unresolved>
+    <rh-game singleplayer multiplayer>
+      <rh-game-asset type="image" src="cherry.png" id="cherry"></rh-game-asset>
 
-      </scene>
-    </pacman-game>
+      <header>
+        <h1 id="headline"><span style="color: red">P</span><span style="color: orange">A</span><span style="color: yellow">C</span><span style="color: #0f0">M</span><span style="color: blue">A</span><span style="color: magenta">N</span></h1>
+      </header>
 
-    <img src="cherry.png" id="cherry" style="display: none;">
+      <rh-scene id="main" visible="true">
+          <rh-menu-item id="btn-singleplayer" action="show-scene:singleplayer">singleplayer</rh-menu-item>
+          <rh-menu-item id="btn-multiplayer" disabled="true" action="show-scene:multiplayer-join-room">multiplayer</rh-menu-item>
+      </rh-scene>
+
+      <rh-scene id="singleplayer">
+        <rh-menu-item id="btn-start-singleplayer" action="start">start</rh-menu-item>
+      </rh-scene>
+
+      <rh-scene id="multiplayer-join-room">
+        Join room...
+        <rh-menu-item id="btn-join-room" action="show-scene:multiplayer-room">join room</rh-menu-item>
+      </rh-scene>
+
+      <rh-scene id="multiplayer-room">
+          <rh-menu-item id="btn-start-singleplayer" action="start">start</rh-menu-item>
+      </rh-scene>
+
+      <rh-scene id="game">
+        <canvas id="canvas-static"></canvas>
+        <canvas id="canvas-dynamic"></canvas>
+      </rh-scene>
+
+      <footer>
+        <audio id="music" src="sounds/arpanauts.wav" loop preload="auto"></audio>
+        <a class="btn" id="btn-music">Enable music</a><br/>
+        <a class="btn" id="btn-sounds">Disable sounds</a><br/>
+        Volume: <input id="volume" type="range" min="0" max="100" value="10"><br/>
+      </footer>
+    </rh-game>
+
+    <!-- <img src="cherry.png" id="cherry" style="display: none;"> -->
 
     <div id="container">
       <div class="scene" id="scene-select-type">
@@ -70,13 +103,6 @@
           <canvas id="canvas-static" width="800" height="600"></canvas>
           <canvas id="canvas-dynamic" width="800" height="600"></canvas>
         </div>
-      </div>
-
-      <audio id="music" src="sounds/arpanauts.wav" loop preload="auto"></audio>
-      <div id="settings">
-        <a class="btn" id="btn-music">Enable music</a><br/>
-        <a class="btn" id="btn-sounds">Disable sounds</a><br/>
-        Volume: <input id="volume" type="range" min="0" max="100" value="10"><br/>
       </div>
     </div>
 

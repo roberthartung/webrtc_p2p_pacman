@@ -1,13 +1,11 @@
-@import url(https://fonts.googleapis.com/css?family=Roboto);
-
 @font-face {
    font-family: 'PacMan';
-   src: url('../font/PacFont Good.ttf') format('truetype');
+   src: url('packages/webrtc_p2p_pacman/font/PacFont Good.ttf') format('truetype');
 }
 
 @font-face {
    font-family: 'Emulogic';
-   src: url('../font/emulogic.ttf') format('truetype');
+   src: url('packages/webrtc_p2p_pacman/font/emulogic.ttf') format('truetype');
 }
 
 .pacman, #headline, .pacman button {
@@ -29,12 +27,6 @@ body {
   font-size: 25px;
   margin: 10px 0;
   visibility: hidden;
-}
-
-#settings {
-  border-top: 1px solid yellow;
-  margin-top: 30px;
-  padding-top: 20px;
 }
 
 body, input, textarea {
@@ -109,8 +101,11 @@ body {
   position: absolute;
 }
 
-#settings {
+footer {
   text-align: center;
+  border-top: 1px solid yellow;
+  margin-top: 30px;
+  padding-top: 20px;
 }
 
 .scene {

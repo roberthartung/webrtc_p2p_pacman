@@ -1,0 +1,29 @@
+ <!DOCTYPE html>
+<link rel="import" href="../../packages/polymer/polymer.html">
+<polymer-element name="rh-menu-item" attributes="action disabled">
+  <template>
+    <style>
+      @font-face {
+       font-family: 'PacMan';
+       src: url('packages/webrtc_p2p_pacman/font/PacFont Good.ttf') format('truetype');
+      }
+
+      @font-face {
+       font-family: 'Emulogic';
+       src: url('packages/webrtc_p2p_pacman/font/emulogic.ttf') format('truetype');
+      }
+
+      :host {
+        display: block;
+        cursor: pointer;
+        color: yellow;
+      }
+
+      :host([disabled="true"]) {
+        color: gray;
+      }
+    </style>
+    <content></content>
+  </template>
+  <script type="application/dart" src="menu_item.dart"></script>
+</polymer-element>

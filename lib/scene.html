@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<link rel="import" href="../../packages/polymer/polymer.html">
+
+<polymer-element name="rh-scene" attributes="visible">
+  <template>
+    <style>
+      :host {
+        display: none;
+      }
+
+      :host([visible="true"]) {
+        display: block;
+      }
+    </style>
+    <content select="rh-menu-item"></content>
+    <content></content>
+  </template>
+  <script type="application/dart" src="scene.dart"></script>
+</polymer-element>

@@ -8,3 +8,5 @@ dependencies:
   polymer: any
   webrtc_utils:
     path: ../webrtc_utils/
+transformers:
+- polymer
