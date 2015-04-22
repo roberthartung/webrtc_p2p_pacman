@@ -3,7 +3,7 @@ part of pacman;
 class SingleplayerPacmanGame extends PacmanGame {
   Pacman pacman;
 
-  static const int numGhosts = 5; // 5
+  static const int numGhosts = 5;
 
   SingleplayerPacmanGame(s, d) : super(s, d);
 
@@ -13,7 +13,6 @@ class SingleplayerPacmanGame extends PacmanGame {
         (_ghostStartPointOffset == 1 || _ghostStartPointOffset == 2)
             ? new FollowingGhostMovement(pacman)
             : new RandomGhostMovement(), pacman, grid, start);
-    // grid.crossPoints[start].first
     addGhost(ghost);
     _ghostStartPointOffset++;
   }

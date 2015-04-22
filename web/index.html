@@ -21,21 +21,21 @@
       </header>
 
       <rh-scene id="main" visible="true">
-          <rh-menu-item id="btn-singleplayer" action="show-scene:singleplayer">singleplayer</rh-menu-item>
-          <rh-menu-item id="btn-multiplayer" disabled="true" action="show-scene:multiplayer-join-room">multiplayer</rh-menu-item>
+          <rh-menu-item id="btn-singleplayer" action="show-scene" value="singleplayer">singleplayer</rh-menu-item>
+          <rh-menu-item id="btn-multiplayer" disabled="true" action="show-scene" value="multiplayer-join-room">multiplayer</rh-menu-item>
       </rh-scene>
 
       <rh-scene id="singleplayer">
-        <rh-menu-item id="btn-start-singleplayer" action="start">start</rh-menu-item>
+        <rh-menu-item id="btn-start-singleplayer" action="start" value="singleplayer">start</rh-menu-item>
       </rh-scene>
 
       <rh-scene id="multiplayer-join-room">
         Join room...
-        <rh-menu-item id="btn-join-room" action="show-scene:multiplayer-room">join room</rh-menu-item>
+        <rh-menu-item id="btn-join-room" action="show-scene" value="multiplayer-room">join room</rh-menu-item>
       </rh-scene>
 
       <rh-scene id="multiplayer-room">
-          <rh-menu-item id="btn-start-singleplayer" action="start">start</rh-menu-item>
+          <rh-menu-item id="btn-start-singleplayer" action="start" value="multiplayer">start</rh-menu-item>
       </rh-scene>
 
       <rh-scene id="game">
@@ -106,8 +106,8 @@
       </div>
     </div>
 
-    <script type="application/dart">export 'package:polymer/init.dart';</script>
-    <!--<script type="application/dart" src="main.dart"></script>-->
+    <!--<script type="application/dart">export 'package:polymer/init.dart';</script>-->
+    <script type="application/dart" src="main.dart"></script>
     <script data-pub-inline src="packages/browser/dart.js"></script>
   </body>
 </html>

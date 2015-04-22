@@ -5,6 +5,8 @@ import 'package:polymer/polymer.dart';
 class MenuItem extends PolymerElement {
   @published String action;
 
+  @published String value;
+
   @published bool disabled = false;
 
   MenuItem.created() : super.created() {

@@ -1,12 +1,108 @@
 import 'dart:html';
-import 'package:webrtc_p2p_pacman/pacman.dart';
+import 'dart:async';
+
+import 'package:webrtc_utils/game.dart';
+import 'package:webrtc_utils/client.dart';
+// import 'package:webrtc_p2p_pacman/pacman.dart';
+import 'package:webrtc_p2p_pacman/rh_game.dart';
+import 'package:polymer/polymer.dart';
 
 bool playMusic = false;
 bool playSounds = true;
 num volume = 10;
 AudioElement music;
 
-void main() {
+class PacmanGameController implements GameController {
+  final CanvasElement canvas_static;
+  final CanvasElement canvas_dynamic;
+
+  CanvasRenderingContext2D ctx_static;
+  CanvasRenderingContext2D ctx_dynamic;
+
+  Stream<int> get onFinished => _onFinishedStreamController.stream;
+  StreamController<int> _onFinishedStreamController =
+      new StreamController.broadcast();
+
+  Stream<int> get onEaten => _onEatenStreamController.stream;
+  StreamController<int> _onEatenStreamController =
+      new StreamController.broadcast();
+
+  bool _loop;
+
+  final Grid grid;
+
+  List<Point> _startPoints;
+  int _ghostStartPointOffset = 1;
+
+  final Set<Point> sectors = new Set();
+
+  final List<Collectable> collectables = new List();
+
+  final int seed;
+
+  bool playSounds = true;
+
+  double _startTime;
+
+  int _lastTick = 0;
+
+  List<MovingCharacter> characters = [];
+
+  Iterable<Ghost> get ghosts => characters.where((c) => c is Ghost);
+
+  /// List of [Pacman] objects that are alive
+  Iterable<Pacman> get pacmans =>
+      characters.where((c) => c is Pacman && c.alive);
+
+  PacmanGameController(canvas_static, this.canvas_dynamic, [this.seed = null])
+      : grid = new Grid(canvas_static),
+        this.canvas_static = canvas_static {
+    ctx_static = canvas_static.getContext('2d');
+    ctx_dynamic = canvas_dynamic.getContext('2d');
+    _loadLevel();
+    _startPoints = grid.crossPoints.keys.toList();
+    _startPoints.shuffle(new Random(seed));
+  }
+
+  void startMultiplayer() {
+    print('start mutliplayer');
+  }
+
+  void startSingleplayer() {
+    Pacman pacman =
+        new Pacman(new KeyboardMovementController(), grid, _startPoints.first);
+    addPacman(pacman);
+
+    _loop = true;
+    window.animationFrame.then(_tick);
+    print('start singleplayer');
+  }
+
+  void _tick(num time) {
+    tick(time);
+    if (_loop) {
+      window.animationFrame.then(_tick);
+    }
+  }
+
+  void tick(num time) {
+    render(0);
+  }
+
+  void render(int tick) {}
+}
+
+main() async {
+  initPolymer();
+  await Polymer.onReady;
+  GameElement game = querySelector('rh-game');
+  game.setP2PGame(new SynchronizedWebSocketP2PGame(
+      'ws://signaling.roberthartung.de:28080', rtcConfiguration));
+  game.setGameController(new PacmanGameController());
+
+  MediaStream ms;
+
+  /*
   p2pGame.setGameRoomRendererFactory(new PacmanGameRoomRendererFactory());
   p2pGame.setPlayerFactory(new PacmanPlayerFactory());
   p2pGame.setProtocolProvider(new PacmanProtocolProvider());
@@ -107,4 +203,6 @@ void main() {
 
   ctx = canvas.getContext('2d');
   */
+  */
+
 }
