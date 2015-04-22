@@ -72,7 +72,7 @@ class FollowingGhostMovement implements MovementController {
 class Ghost extends MovingCharacter {
   Pacman pacman;
 
-  bool _harmless = false;
+  bool harmless = false;
 
   Ghost(movementController, Pacman pacman, Grid grid, Point sector) : super(grid, movementController, sector) {
     this.pacman = pacman;
@@ -101,7 +101,7 @@ class Ghost extends MovingCharacter {
     ctx.quadraticCurveTo(10, -10, 10, 10);
     ctx.closePath();
 
-    ctx.fillStyle = _harmless ? 'blue' : 'cyan';
+    ctx.fillStyle = harmless ? 'blue' : 'cyan';
     ctx.fill();
     // Eyes
     ctx.beginPath();

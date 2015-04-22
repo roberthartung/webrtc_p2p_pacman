@@ -314,10 +314,10 @@ abstract class PacmanGame {
             }
             print('[$this] Ghost are now harmless.');
             _harmless = true;
-            ghosts.forEach((Ghost g) => g._harmless = true);
+            ghosts.forEach((Ghost g) => g.harmless = true);
             _harmlessGhostsTimer = new Timer(new Duration(seconds: 10), () {
               _harmless = false;
-              ghosts.forEach((Ghost g) => g._harmless = false);
+              ghosts.forEach((Ghost g) => g.harmless = false);
               print('[$this] Ghost are not harmless anymore.');
             });
           }
