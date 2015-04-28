@@ -203,18 +203,32 @@ class PacmanGameController implements GameController {
     print('start mutliplayer');
   }
 
+  void createGhost(Pacman pacman) {
+    Point start = _startPoints.elementAt(_ghostStartPointOffset);
+    Ghost ghost = new Ghost(
+        (_ghostStartPointOffset == 1 || _ghostStartPointOffset == 2)
+            ? new FollowingGhostMovement(pacman)
+            : new RandomGhostMovement(), pacman, grid, start);
+    characters.add(ghost);
+    _ghostStartPointOffset++;
+  }
+
   void startSingleplayer() {
     Pacman pacman =
         new Pacman(new KeyboardMovementController(), grid, _startPoints.first);
     characters.add(pacman);
+
+    for(int i=1;i<=5;i++) {
+      createGhost(pacman);
+    }
 
     init();
     _startTime = window.performance.now();
     window.animationFrame.then(_renderStatic);
     window.animationFrame.then(_render);
 
-    _loop = true;
-    window.animationFrame.then(_tick);
+    //_loop = true;
+    //window.animationFrame.then(_tick);
     print('start singleplayer');
   }
 
@@ -253,6 +267,7 @@ class PacmanGameController implements GameController {
     // TODO(rh): Anything else we have to consider to cleanup here?
   }
 
+  /*
   void _tick(num time) {
     // TODO(rh): All Ticks
     tick(time ~/ (1000 / 60));
@@ -261,6 +276,7 @@ class PacmanGameController implements GameController {
       window.animationFrame.then(_tick);
     }
   }
+  */
 
   void spawnCherry() {
     List points = sectors.toList();
@@ -299,6 +315,7 @@ class PacmanGameController implements GameController {
                   '<audio src="sounds/pacman_death.wav" autoplay preload="auto"></audio>');
             }
           } else {
+            // TODO(rh): Remove ghost temporarily
             // Start timer to spawn ghost
             // ghost.position = ...;
             new Timer(new Duration(seconds: 5), () {
