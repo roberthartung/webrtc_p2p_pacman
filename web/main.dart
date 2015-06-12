@@ -13,22 +13,27 @@ bool playSounds = true;
 num volume = 10;
 AudioElement music;
 
+/// GameController implementation for the PacMan game
 class PacmanGameController implements GameController {
+  /// Canvas Element for static elements that do not change from tick to tick
+  /// for example the walls
   final CanvasElement canvas_static;
+  
+  
   final CanvasElement canvas_dynamic;
 
   CanvasRenderingContext2D ctx_static;
   CanvasRenderingContext2D ctx_dynamic;
 
+  /// 
   Stream<int> get onFinished => _onFinishedStreamController.stream;
   StreamController<int> _onFinishedStreamController =
       new StreamController.broadcast();
 
+  /// 
   Stream<int> get onEaten => _onEatenStreamController.stream;
   StreamController<int> _onEatenStreamController =
       new StreamController.broadcast();
-
-  bool _loop;
 
   final Grid grid;
 
@@ -54,6 +59,10 @@ class PacmanGameController implements GameController {
   Iterable<Ghost> get ghosts => characters.where((c) => c is Ghost);
 
   bool _harmless = false;
+  
+  final int numberOfPowerUps = 10;
+  
+  final int numberOfGhosts = 6;
 
   /// List of [Pacman] objects that are alive
   Iterable<Pacman> get pacmans =>
@@ -69,6 +78,7 @@ class PacmanGameController implements GameController {
     _startPoints.shuffle(new Random(seed));
   }
 
+  /// Initializes a new game
   void init() {
     characters.forEach((MovingCharacter c) => c.movementController.attach());
     sectors.clear();
@@ -93,16 +103,17 @@ class PacmanGameController implements GameController {
       }
     });
 
-    // Create PowerUp to be able to eat ghosts
+    // Create a new list so we can shuffle the points
     List<Point> s = sectors.toList(growable: false);
-    // TODO(rh): Dynamic random
     s.shuffle(nextRandom());
-    s.take(10).forEach((Point p) {
+    // Take 10 points
+    s.take(numberOfPowerUps).forEach((Point p) {
       collectables.add(new Powerup(new Point(
           p.x * Grid.gridSize + Grid.gridSize / 2,
           p.y * Grid.gridSize + Grid.gridSize / 2)));
     });
-    sectors.skip(10).forEach((Point p) {
+    // For each sector that is left -> create a regular dot
+    s.forEach((Point p) {
       collectables.add(new Dot(new Point(
           p.x * Grid.gridSize + Grid.gridSize / 2,
           p.y * Grid.gridSize + Grid.gridSize / 2)));
@@ -114,6 +125,7 @@ class PacmanGameController implements GameController {
   }
 
   void _loadLevel() {
+    grid.setGhostSpawner(new GhostSpawner(new Point(10,12), new Point(18,16), new Point(13,12), new Point(15,12)));
     grid.add(new Edge(1, 1, 1, 5));
     grid.add(new Edge(1, 1, 6, 1));
     grid.add(new Edge(1, 5, 1, 8));
@@ -213,23 +225,23 @@ class PacmanGameController implements GameController {
     _ghostStartPointOffset++;
   }
 
+  /// Starts a new game in the singleplayer mode
   void startSingleplayer() {
+    /// Create Pacman and ghosts 
     Pacman pacman =
         new Pacman(new KeyboardMovementController(), grid, _startPoints.first);
     characters.add(pacman);
 
-    for(int i=1;i<=5;i++) {
+    for(int i=1;i<=numberOfGhosts;i++) {
       createGhost(pacman);
     }
 
+    /// init game
     init();
+    /// take current timestamp and start rendering
     _startTime = window.performance.now();
     window.animationFrame.then(_renderStatic);
     window.animationFrame.then(_render);
-
-    //_loop = true;
-    //window.animationFrame.then(_tick);
-    print('start singleplayer');
   }
 
   void _renderStatic(num time) {
@@ -287,19 +299,12 @@ class PacmanGameController implements GameController {
   }
 
   void tick(int tick) {
-// bool eaten = false;
-
     if (tick % 1000 == 0) {
       spawnCherry();
     }
 
     // Make one tick for each character
     characters.forEach((MovingCharacter character) {
-      if (character is Pacman) {
-        if (tick % 10 == 0) {
-          character.score -= 1;
-        }
-      }
       character.tick(tick);
     });
 
@@ -314,11 +319,15 @@ class PacmanGameController implements GameController {
               document.body.appendHtml(
                   '<audio src="sounds/pacman_death.wav" autoplay preload="auto"></audio>');
             }
-          } else {
+          } else if(!ghost.eaten) {
+            print('Ghost eaten');
+            ghost.eaten = true;
             // TODO(rh): Remove ghost temporarily
             // Start timer to spawn ghost
-            // ghost.position = ...;
+            ghost.position = (grid.ghostSpawner.p1 + new Point(grid.ghostSpawner.width~/2,grid.ghostSpawner.height~/2)) * Grid.gridSize;
             new Timer(new Duration(seconds: 5), () {
+              ghost.eaten = false;
+              ghost.respawning = true;
               print('Ghost was eaten. [$ghost]. Respawn!');
             });
           }
@@ -348,8 +357,11 @@ class PacmanGameController implements GameController {
             _harmless = true;
             ghosts.forEach((Ghost g) => g.harmless = true);
             _harmlessGhostsTimer = new Timer(new Duration(seconds: 10), () {
+              ghosts.forEach((Ghost g) {
+                g.harmless = false;
+                g.eaten = false;
+              });
               _harmless = false;
-              ghosts.forEach((Ghost g) => g.harmless = false);
               print('[$this] Ghost are not harmless anymore.');
             });
           }

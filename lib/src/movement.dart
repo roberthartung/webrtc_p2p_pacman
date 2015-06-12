@@ -11,6 +11,8 @@ abstract class MovementController {
   void attach();
 
   void detach();
+  
+  void _forceDirection(Direction direction);
 }
 
 abstract class BaseMovementController {
@@ -26,6 +28,10 @@ abstract class BaseMovementController {
 
   void detach() {
 
+  }
+  
+  void _forceDirection(Direction newDirection) {
+    _direction = newDirection;
   }
 
   void checkDirection(

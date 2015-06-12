@@ -18,6 +18,11 @@ class Pacman extends MovingCharacter {
   void tick(int tick) {
     super.tick(tick);
 
+    // Automatically reduce score every 10 ticks!
+    if (tick % 10 == 0) {
+      score -= 1;
+    }
+
     if (angle >= 40) {
       mouthDirection = -1;
     } else if (angle <= 5) {

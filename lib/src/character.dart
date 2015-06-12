@@ -13,9 +13,9 @@ abstract class MovingCharacter {
 
   /// Current direction
   /*Direction direction;*/
-  
+
   MovingCharacter(
-      this.grid, this.movementController, Point start/*,this.direction*/) {
+      this.grid, this.movementController, Point start /*,this.direction*/) {
     // Make sure we have our own object!
     position =
         new Point(10 + start.x * Grid.gridSize, 10 + start.y * Grid.gridSize);
@@ -46,10 +46,11 @@ abstract class MovingCharacter {
     }
     */
 
-    if (_canChangeDirection && !crossPointDirections.contains(movementController.direction)) {
+    // Stop moving at a crosspoint if the requested direction can not be satisfied
+    if (_canChangeDirection &&
+        !crossPointDirections.contains(movementController.direction)) {
       return;
     }
-
     switch (movementController.direction) {
       case Direction.UP:
         position += new Point(0, -1);
